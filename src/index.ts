@@ -19,28 +19,44 @@ const newTask = (title: string, resource: string, onHtmlResult: TaskCallback) =>
 }
 
 class Engine {
-    private tasksById: Map<string, Task>;
+    private taskResultsByTaskId: Map<string, string>;
     private tasks: Task[];
 
     constructor(tasks: Task[]) {
         this.tasks = tasks;
-        this.tasksById = new Map<string, Task>(tasks.map(task => [task.id, task]))
+        this.taskResultsByTaskId = new Map<string, string>()
     }
 
     start() {
         this.tasks.forEach(task => {
-            setInterval(() => {
-                Engine.runTask(task)
-            }, 10_000)
+            setInterval(this.performTask.bind(this, task), 10_000)
         })
     }
 
-    static async runTask(task: Task) {
-        const resource = await fetch(task.resource)
-        const text = await resource.text()
-        const root = parse(text);
-        const result = task.onHtmlResult(root);
-        console.log(`Result for the task[${task.id}]::${result}`)
+    async performTask(task: Task) {
+        const taskResult = await this.runTask(task);
+        this.updateTaskResult(task, taskResult)
+    }
+
+    updateTaskResult(task: Task, taskResult: string | null) {
+        if (taskResult) {
+            if (taskResult != this.taskResultsByTaskId.get(task.id)) {
+                this.taskResultsByTaskId.set(task.id, taskResult);
+                console.log(`Task[${task.id}] has been set to ${taskResult}`)
+            }
+        }
+    }
+
+    async runTask(task: Task): Promise<string | null> {
+        try {
+            const resource = await fetch(task.resource)
+            const text = await resource.text()
+            const root = parse(text);
+            const result = task.onHtmlResult(root);
+            return result
+        } catch (error) {
+            return null;
+        }
     }
 }
 
