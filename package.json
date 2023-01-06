@@ -2,10 +2,11 @@
   "name": "beep",
   "version": "1.0.0",
   "description": "a change notification system",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "start": "npm run build && node build/index.js",
-    "build": "rimraf ./build && tsc"
+    "start": "npm run build && node dist/index.js",
+    "build": "rimraf ./dist && tsc"
   },
   "repository": {
     "type": "git",

@@ -2,23 +2,51 @@ import fetch from 'node-fetch';
 import { HTMLElement, parse } from 'node-html-parser';
 import { uuid } from 'uuidv4';
 
-type TaskCallback = (html: HTMLElement) => string
+const DEFAULT_INTERVAL = 10_000;
 
-interface Task {
+type OnHtmlResultCallback = (html: HTMLElement) => string
+type OnValueChangeCallback = (oldValue: MaybeString, newValue: MaybeString) => void
+type MaybeString = string | null | undefined;
+
+export interface TaskConfig {
+    interval: number  
+}
+
+export interface Task {
     id: string,
     title: string,
     resource: string,
-    onHtmlResult: TaskCallback
+    onHtmlResult: OnHtmlResultCallback,
+    config: TaskConfig,
+    onValueChange: OnValueChangeCallback
 }
 
-const newTask = (title: string, resource: string, onHtmlResult: TaskCallback) => {
+export const newTask = (
+    title: string, 
+    resource: string, 
+    onHtmlResult: OnHtmlResultCallback,
+    config?: TaskConfig,
+    onValueChange?: OnValueChangeCallback
+) => {
     const id = uuid();
+    if (!config) {
+        config = {
+            interval: DEFAULT_INTERVAL
+        }
+    }
+
+    if (!onValueChange) {
+        onValueChange = (oldValue, newValue) => {
+            console.log(`Task[${id}] has been set from [${oldValue}] to [${newValue}]`)
+        }
+    }
+
     return {
-        id, title, resource, onHtmlResult
+        id, title, resource, onHtmlResult, config, onValueChange
     }
 }
 
-class Engine {
+export class Engine {
     private taskResultsByTaskId: Map<string, string>;
     private tasks: Task[];
 
@@ -29,7 +57,7 @@ class Engine {
 
     start() {
         this.tasks.forEach(task => {
-            setInterval(this.performTask.bind(this, task), 10_000)
+            setInterval(this.performTask.bind(this, task), task.config.interval)
         })
     }
 
@@ -38,37 +66,27 @@ class Engine {
         this.updateTaskResult(task, taskResult)
     }
 
-    updateTaskResult(task: Task, taskResult: string | null) {
+    updateTaskResult(task: Task, taskResult: MaybeString) {
         if (taskResult) {
             if (taskResult != this.taskResultsByTaskId.get(task.id)) {
+                const oldValue = this.taskResultsByTaskId.get(task.id);
                 this.taskResultsByTaskId.set(task.id, taskResult);
-                console.log(`Task[${task.id}] has been set to ${taskResult}`)
+                task.onValueChange(oldValue, taskResult);
             }
         }
     }
 
-    async runTask(task: Task): Promise<string | null> {
+    async runTask(task: Task): Promise<MaybeString> {
         try {
+            console.log(`[LOG] Running the task: ${task.id}`)
             const resource = await fetch(task.resource)
             const text = await resource.text()
             const root = parse(text);
             const result = task.onHtmlResult(root);
             return result
         } catch (error) {
+            console.error(error);
             return null;
         }
     }
 }
-
-async function main() {
-    const tasks: Task[] = [
-        newTask("Economy book price change", `https://www.amazon.ca/Economics-Book-Ideas-Simply-Explained/dp/1465473912/`, dom => {
-            return dom.querySelector(`#price`)?.innerText ?? ""
-        })
-    ]
-
-    const engine = new Engine(tasks);
-    engine.start()
-}
-
-main();
