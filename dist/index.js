@@ -75,5 +75,12 @@ class Engine {
             }
         });
     }
+    getCurrentTaskResults() {
+        return this.tasks
+            .map(task => ({
+            taskName: task.title,
+            taskResult: this.taskResultsByTaskId.get(task.id)
+        }));
+    }
 }
 exports.Engine = Engine;

@@ -1,7 +1,11 @@
 import { HTMLElement } from 'node-html-parser';
 type OnHtmlResultCallback = (html: HTMLElement) => string;
 type OnValueChangeCallback = (oldValue: MaybeString, newValue: MaybeString) => void;
-type MaybeString = string | null | undefined;
+export type MaybeString = string | null | undefined;
+export interface TaskResult {
+    taskName: string;
+    taskResult: MaybeString;
+}
 export interface TaskConfig {
     interval: number;
 }
@@ -29,5 +33,6 @@ export declare class Engine {
     performTask(task: Task): Promise<void>;
     updateTaskResult(task: Task, taskResult: MaybeString): void;
     runTask(task: Task): Promise<MaybeString>;
+    getCurrentTaskResults(): TaskResult[];
 }
 export {};

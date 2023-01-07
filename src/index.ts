@@ -6,7 +6,11 @@ const DEFAULT_INTERVAL = 10_000;
 
 type OnHtmlResultCallback = (html: HTMLElement) => string
 type OnValueChangeCallback = (oldValue: MaybeString, newValue: MaybeString) => void
-type MaybeString = string | null | undefined;
+export type MaybeString = string | null | undefined;
+export interface TaskResult {
+    taskName: string,
+    taskResult: MaybeString
+} 
 
 export interface TaskConfig {
     interval: number  
@@ -88,5 +92,13 @@ export class Engine {
             console.error(error);
             return null;
         }
+    }
+
+    getCurrentTaskResults(): TaskResult[] {
+        return this.tasks
+            .map(task => ({
+                taskName: task.title, 
+                taskResult: this.taskResultsByTaskId.get(task.id)
+            }))
     }
 }

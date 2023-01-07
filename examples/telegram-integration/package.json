@@ -1,0 +1,13 @@
+{
+  "name": "telegram-integration",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "beep": "file:../../dist",
+    "dotenv": "^16.0.1"
+  }
+}
